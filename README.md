@@ -4,6 +4,7 @@
 - [Best Continuous Integration Tools for 2023 ‒ Survey Results](https://blog.jetbrains.com/teamcity/2023/07/best-ci-tools/)
 - [DevOps Foundations: Infrastructure as Code Course Handout](./Documents/Infrastructure_as_Code_Course_Handout.pdf)
 - [DevOps Foundations: Infrastructure as Code Lab Setup Instructions](./Documents/Infrastructure_as_Code_Lab_Setup_Instructions.pdf)
+- [How to Launch AWS Elastic beanstalk using Terraform](https://automateinfra.com/2021/03/24/how-to-launch-aws-elastic-beanstalk-using-terraform/)
 
 ## Chapters
 0. Introduction
