@@ -14,7 +14,7 @@
 
 ## Sections
 | Section | Title | Length | Rank | Comments |
-|---------|-------|--------|------|----------|
+|:--------|:------|:-------|:-----|:---------|
 | 00_01   | Building your CI/CD pipeline| 1m 16s |||
 | 00_02   | What you should know| 2m 25s|||
 | 00_03   | Landscape of CI/CD tools and CI/CD tool categories| 1m 20s|||
