@@ -2,6 +2,8 @@
 
 ## References and Resources
 - [Best Continuous Integration Tools for 2023 ‒ Survey Results](https://blog.jetbrains.com/teamcity/2023/07/best-ci-tools/)
+- []()
+- []()
 
 ## Chapters
 0. Introduction
