@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  jenkins:
+    container_name: controller
+    image: jenkins_lts:${IMAGE_TAG}
+    ports:
+      - "9090:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - ./jenkins_home:/var/jenkins_home
+
+volumes:
+  jenkins_home:
+    driver: local
+
