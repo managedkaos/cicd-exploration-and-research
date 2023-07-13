@@ -2,8 +2,8 @@ version: '3'
 
 services:
   jenkins:
-    container_name: controller
-    image: jenkins_lts:${IMAGE_TAG}
+    container_name: jenkins
+    image: jenkins/jenkins:lts-jdk11
     ports:
       - "9090:8080"
       - "50000:50000"
