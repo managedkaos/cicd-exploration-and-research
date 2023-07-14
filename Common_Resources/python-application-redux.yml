@@ -1,0 +1,110 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Create:
+    1) An elastic beanstalk application
+    2) An elastic beanstalk environment named "Staging" using "64bit Amazon Linux 2023 v4.0.2 running Python 3.11"
+    3) An elastic beanstalk environment named "Production" using "64bit Amazon Linux 2023 v4.0.2 running Python 3.11"
+  Outputs:
+    1) ApplicationName
+    2) StagingEnvironmentName
+    3) The URL for the StagingEnvironment
+    4) ProductionEnvironmentName
+    5) The URL for the ProductionEnvironment
+
+Resources:
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Description: Beanstalk EC2 role
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWorkerTier
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Roles:
+        - !Ref InstanceRole
+
+  Application:
+    Type: AWS::ElasticBeanstalk::Application
+    DependsOn:
+      - InstanceProfile
+    Properties:
+      ApplicationName: !Sub ${AWS::StackName}
+      Description: A Python web application
+
+  ConfigurationTemplate:
+    Type: AWS::ElasticBeanstalk::ConfigurationTemplate
+    Properties:
+      ApplicationName: !Ref Application      
+      Description: AWS ElasticBeanstalk Configuration Template
+      SolutionStackName: 64bit Amazon Linux 2023 v4.0.2 running Python 3.11      
+                  
+      OptionSettings:
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: IamInstanceProfile
+          Value: !Ref InstanceProfile        
+
+  StagingEnvironment:
+    Type: AWS::ElasticBeanstalk::Environment
+    Properties:
+      Description: The staging environment for the application
+      ApplicationName: !Ref Application
+      TemplateName: !Ref ConfigurationTemplate
+      Tier:
+        Name: WebServer
+        Type: Standard
+      Tags:
+        - Key: Environment
+          Value: Staging
+        - Key: Application
+          Value: !Ref Application
+
+  ProductionEnvironment:
+    Type: AWS::ElasticBeanstalk::Environment
+    Properties:
+      Description: The production environment for the application
+      ApplicationName: !Ref Application
+      TemplateName: !Ref ConfigurationTemplate
+      Tier:
+        Name: WebServer
+        Type: Standard
+      Tags:
+        - Key: Environment
+          Value: Production
+        - Key: Application
+          Value: !Ref Application
+
+Outputs:
+  ApplicationName:
+    Value: !Ref Application
+    Export:
+      Name: !Sub ${AWS::StackName}-ApplicationName
+  StagingEnvironmentName:
+    Value: !Ref StagingEnvironment
+    Export:
+      Name: !Sub ${AWS::StackName}-StagingEnvironmentName
+  ProductionEnvironmentName:
+    Value: !Ref ProductionEnvironment
+    Export:
+      Name: !Sub ${AWS::StackName}-ProductionEnvironmentName
+  StagingEnvironmentURL:
+    Value: !GetAtt StagingEnvironment.EndpointURL
+    Export:
+      Name: !Sub ${AWS::StackName}-StagingEnvironmentURL
+  ProductionEnvironmentURL:
+    Value: !GetAtt ProductionEnvironment.EndpointURL
+    Export:
+      Name: !Sub ${AWS::StackName}-ProductionEnvironmentURL

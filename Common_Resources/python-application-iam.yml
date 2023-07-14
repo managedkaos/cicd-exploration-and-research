@@ -1,0 +1,35 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Create:
+    1) An elastic beanstalk application
+    2) An elastic beanstalk environment named "Staging" using "64bit Amazon Linux 2023 v4.0.2 running Python 3.11"
+    3) An elastic beanstalk environment named "Production" using "64bit Amazon Linux 2023 v4.0.2 running Python 3.11"
+  Outputs:
+    1) ApplicationName
+    2) StagingEnvironmentName
+    3) The URL for the StagingEnvironment
+    4) ProductionEnvironmentName
+    5) The URL for the ProductionEnvironment
+Resources:
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWorkerTier
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub ${AWS::StackName}-instance-profile
+      Roles:
+        - !Ref Role

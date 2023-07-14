@@ -2,6 +2,8 @@ version: '3'
 
 services:
   jenkins:
+    mem_reservation: "500M"
+    mem_limit: "1G"
     container_name: jenkins
     image: jenkins/jenkins:lts-jdk11
     ports:

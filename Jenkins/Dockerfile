@@ -9,7 +9,9 @@ RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker && \
     grep \
     groovy \
     vim \
-    wget
+    wget \
+    python3 \
+    python3-pip
 
 USER jenkins
 WORKDIR /tmp

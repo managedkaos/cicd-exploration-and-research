@@ -1,0 +1,99 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Create:
+    1) An elastic beanstalk application
+    2) An elastic beanstalk environment named "Staging" using "64bit Amazon Linux 2023 v4.0.2 running Python 3.11"
+    3) An elastic beanstalk environment named "Production" using "64bit Amazon Linux 2023 v4.0.2 running Python 3.11"
+  Outputs:
+    1) ApplicationName
+    2) StagingEnvironmentName
+    3) The URL for the StagingEnvironment
+    4) ProductionEnvironmentName
+    5) The URL for the ProductionEnvironment
+Resources:
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-elastic-beanstalk-service-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkWorkerTier
+        - arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    DependsOn:
+      - Role
+    Properties:
+      InstanceProfileName: !Sub ${AWS::StackName}-elastic-beanstalk-instance-profile
+      Roles:
+        - !Ref Role
+  Application:
+    Type: AWS::ElasticBeanstalk::Application
+    DependsOn:
+      - InstanceProfile
+    Properties:
+      ApplicationName: !Sub ${AWS::StackName}-application
+      Description: A Python web application
+  StagingEnvironment:
+    Type: AWS::ElasticBeanstalk::Environment
+    DependsOn:
+      - InstanceProfile
+    Properties:
+      ApplicationName: !Ref Application
+      EnvironmentName: !Sub ${AWS::StackName}-staging
+      SolutionStackName: 64bit Amazon Linux 2023 v4.0.2 running Python 3.11
+      Tier:
+        Name: WebServer
+        Type: Standard
+      OptionSettings:
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: ServiceRole
+          Value: !GetAtt Role.Arn
+  ProductionEnvironment:
+    Type: AWS::ElasticBeanstalk::Environment
+    DependsOn:
+      - InstanceProfile
+    Properties:
+      ApplicationName: !Ref Application
+      EnvironmentName: !Sub ${AWS::StackName}-production
+      SolutionStackName: 64bit Amazon Linux 2023 v4.0.2 running Python 3.11
+      Tier:
+        Name: WebServer
+        Type: Standard      
+      OptionSettings:
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: ServiceRole
+          Value: !GetAtt Role.Arn
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: IamInstanceProfile
+          Value: !Sub ${AWS::StackName}-instance-profile
+
+Outputs:
+  ApplicationName:
+    Value: !Ref Application
+    Export:
+      Name: !Sub ${AWS::StackName}-ApplicationName
+  StagingEnvironmentName:
+    Value: !Ref StagingEnvironment
+    Export:
+      Name: !Sub ${AWS::StackName}-StagingEnvironmentName
+  ProductionEnvironmentName:
+    Value: !Ref ProductionEnvironment
+    Export:
+      Name: !Sub ${AWS::StackName}-ProductionEnvironmentName
+  StagingEnvironmentURL:
+    Value: !GetAtt StagingEnvironment.EndpointURL
+    Export:
+      Name: !Sub ${AWS::StackName}-StagingEnvironmentURL
+  ProductionEnvironmentURL:
+    Value: !GetAtt ProductionEnvironment.EndpointURL
+    Export:
+      Name: !Sub ${AWS::StackName}-ProductionEnvironmentURL

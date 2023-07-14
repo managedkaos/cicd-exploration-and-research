@@ -5,6 +5,17 @@
 - [DevOps Foundations: Infrastructure as Code Course Handout](./Documents/Infrastructure_as_Code_Course_Handout.pdf)
 - [DevOps Foundations: Infrastructure as Code Lab Setup Instructions](./Documents/Infrastructure_as_Code_Lab_Setup_Instructions.pdf)
 - [How to Launch AWS Elastic beanstalk using Terraform](https://automateinfra.com/2021/03/24/how-to-launch-aws-elastic-beanstalk-using-terraform/)
+- [Hands-on AWS CloudFormation - Part 5. IAM users, groups and roles](https://dev.to/tiamatt/hands-on-aws-cloudformation-part-5-iam-users-groups-and-roles-5d9f)
+- [IAM_Users_Groups_and_Policies.yaml](https://github.com/awslabs/aws-cloudformation-templates/blob/master/aws/services/IAM/IAM_Users_Groups_and_Policies.yaml)
+- [Launching a Jenkins Master using AWS CloudFormation](http://beta.awsdocs.com/infrastructure_as_code/cloudformation/applications/jenkins_cf_deployment/)
+- [Elastic Beanstalk template snippets](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-elasticbeanstalk.html)
+
+
+## Tools
+### Bamboo
+- [Bamboo Server and Data Center feature comparison](https://confluence.atlassian.com/bamboo/bamboo-server-and-data-center-feature-comparison-1063170546.html)
+- [Server Deprecation Details and Countdown](https://www.atlassian.com/migration/assess/journey-to-cloud)
+
 
 ## Chapters
 0. Introduction
@@ -69,3 +80,17 @@
 ### GitLab CI
 - https://www.linkedin.com/learning/continuous-integration-and-continuous-delivery-with-gitlab
 
+
+## Notes
+- 2023-07-14
+  - Added cfn template for service account, target application, and 2 environments (Staging + Production)for the application
+  - need to combine them into one template
+  - need to update the application, the deployment scripts, etc
+  - need to update the pipelines to take the application and environment names
+  - need to update upload script to take the name of the applciation and the name of the bucket
+
+        upload-new-version.sh python-web-application-application
+   
+  - need up update the deploy script to take the application name first and the environment second.  currently in use:
+
+        ./deploy-new-version.sh pytho-Stag-W7hgJD1LTmxb python-web-application-application
