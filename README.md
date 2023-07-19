@@ -90,7 +90,11 @@
   - need to update upload script to take the name of the applciation and the name of the bucket
 
         upload-new-version.sh python-web-application-application
-   
+
   - need up update the deploy script to take the application name first and the environment second.  currently in use:
 
         ./deploy-new-version.sh pytho-Stag-W7hgJD1LTmxb python-web-application-application
+
+- 2023-07-14
+  - Maybe use App Runner instead of Elastic Beanstalk or Lambda?
+  - [AWS App Runner CloudFormation Template generated using AWS Copilot](https://gist.github.com/toricls/5c448b723e25118e683ae065ce58fa1d)
