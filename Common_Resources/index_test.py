@@ -1,6 +1,6 @@
+from index import handler
 import unittest
 import json
-from index import handler
 
 class TestHandler(unittest.TestCase):
     def setUp(self):

@@ -16,8 +16,10 @@ def handler(event, context):
     # Get the id from the path
     id = event["rawPath"][1:]
 
-    # Check for the id in the data and return it if found
+    # Check the id against each item in the data
     for item in data:
+
+        # Return the item if the id matches
         if item["id"] == id:
             return {
                 "statusCode": 200,
@@ -27,7 +29,7 @@ def handler(event, context):
                 "body": json.dumps(item)
             }
 
-    # Return a 404 if the id is not found
+    # Return a 404 if the id doesn't match any item
     else:
         return {
             "statusCode": 404,
