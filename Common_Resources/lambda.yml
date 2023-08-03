@@ -1,0 +1,164 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template to create a Lambda function
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-LambdaExecutionRole 
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+
+  HelloWorldLambdaFunctionStaging:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-Staging 
+      Runtime: python3.10
+      Handler: index.handler
+      Code:
+        ZipFile: |
+          def handler(event, context):
+              import os
+              environment = os.environ['ENVIRONMENT']
+              html_response = f"""
+              <!DOCTYPE html>
+              <html>
+              <head>
+                  <title>Welcome - {environment}</title>
+                  <style>
+                      body {{
+                          font-family: Arial, sans-serif;
+                          background-color: #f0f0f0;
+                          text-align: center;
+                      }}
+                      h1 {{
+                          color: #1e90ff;
+                      }}
+                      p {{
+                          color: #4CAF50;
+                          font-size: 20px;
+                      }}
+                  </style>
+              </head>
+              <body>
+                  <h1>Welcome to Continuous Integration: Tools!!!</h1>
+                  <h2>Environment: {environment}</h2>
+                  <p>Get ready to learn more about CI/CD and several amazing tools that simplify testing, building, and deploying software.</p>
+              </body>
+              </html>
+              """
+              return {
+                  'statusCode': 200,
+                  'headers': {
+                      'Content-Type': 'text/html',
+                  },
+                  'body': html_response
+              }
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          ENVIRONMENT: STAGING
+
+  HelloWorldLambdaFunctionProduction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-Production 
+      Runtime: python3.10
+      Handler: index.handler
+      Code:
+        ZipFile: |
+          def handler(event, context):
+              import os
+              environment = os.environ['ENVIRONMENT']
+              html_response = f"""
+              <!DOCTYPE html>
+              <html>
+              <head>
+                  <title>Welcome - {environment}</title>
+                  <style>
+                      body {{
+                          font-family: Arial, sans-serif;
+                          background-color: #f0f0f0;
+                          text-align: center;
+                      }}
+                      h1 {{
+                          color: #1e90ff;
+                      }}
+                      p {{
+                          color: #4CAF50;
+                          font-size: 20px;
+                      }}
+                  </style>
+              </head>
+              <body>
+                  <h1>Welcome to Continuous Integration: Tools!!!</h1>
+                  <h2>Environment: {environment}</h2>
+                  <p>Get ready to learn more about CI/CD and several amazing tools that simplify testing, building, and deploying software.</p>
+              </body>
+              </html>
+              """
+              return {
+                  'statusCode': 200,
+                  'headers': {
+                      'Content-Type': 'text/html',
+                  },
+                  'body': html_response
+              }
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          ENVIRONMENT: PRODUCTION
+
+  BooksLambdaUrlStaging:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !Ref HelloWorldLambdaFunctionStaging
+      AuthType: NONE
+
+  BooksLambdaUrlPermissionStaging:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref HelloWorldLambdaFunctionStaging
+      Principal: '*'
+      Action: 'lambda:InvokeFunctionUrl'
+      FunctionUrlAuthType: NONE
+  
+  BooksLambdaUrlProduction:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !Ref HelloWorldLambdaFunctionProduction
+      AuthType: NONE
+
+  BooksLambdaUrlPermissionProdction:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref HelloWorldLambdaFunctionProduction
+      Principal: '*'
+      Action: 'lambda:InvokeFunctionUrl'
+      FunctionUrlAuthType: NONE
+
+Outputs:
+  BooksLambdaUrlStaging:
+    Description: The URL of the Lambda function
+    Value: 
+      Fn::GetAtt: BooksLambdaUrlStaging.FunctionUrl
+  BooksLambdaUrlProduction:
+    Description: The URL of the Lambda function
+    Value: 
+      Fn::GetAtt: BooksLambdaUrlProduction.FunctionUrl
