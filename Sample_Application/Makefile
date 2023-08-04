@@ -4,7 +4,7 @@ CODE=$(shell ls *.py)
 
 hello:
 	@echo "Here are the targets for this Makefile:"
-	@echo "  lint   - run pylint on the code"
+	@echo "  lint   - run linters on the code"
 	@echo "  black  - run black on the code"
 	@echo "  test   - run the tests"
 	@echo "  build  - build the lambda.zip file"
@@ -25,26 +25,28 @@ requirements:
 	pip install --requirement requirements-development.txt
 
 lint:
-	pylint --disable=R,C $(CODE)
+	pylint --exit-zero --disable=R,C $(CODE)
+	flake8 --exit-zero $(CODE)
 
 black:
-	black --check $(CODE)
+	black --diff $(CODE)
 
 test:
-	ENVIRONMENT=testing python -m unittest -v index_test
+	python -m unittest -v index_test
 
 build:
 	zip lambda.zip index.py data.json
 
 deploy:
-	aws --profile=$(PROFILE) lambda update-function-code \
-		--function-name=$(FUNCTION) \
-		--zip-file fileb://lambda.zip
+	aws lambda update-function-code \
+		--zip-file=fileb://lambda.zip \
+		--profile=$(PROFILE) \
+		--function-name=$(FUNCTION)
 
 clean:
-	rm -f lambda.zip
+	rm -vf lambda.zip
 
-all: clean test build deploy
+all: clean lint black test build deploy
 
 .PHONY: test build deploy all clean
 

@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
+
 Description: |
   A CloudFormation template that creates the following resources:
     1) Lambda function for the staging environment.
@@ -8,9 +9,10 @@ Description: |
     5) IAM access key for the service account
   Outputs:
     1) Region where the stack is deployed.
-    0) Account ID where the stack is deployed.
-    1) URLs for the staging and production environments.
-    2) AccessKeyId and SecretAccessKey for the service account.
+    2) Account ID where the stack is deployed.
+    3) URLs for the staging and production environments.
+    4) AccessKeyId and SecretAccessKey for the service account.
+
 Resources:
   LambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -38,61 +40,14 @@ Resources:
   LambdaFunctionStaging:
     Type: AWS::Lambda::Function
     Properties:
+      Description: The 'staging' environment for the sample application.
       FunctionName: !Sub ${AWS::StackName}-staging
       Runtime: python3.10
       Handler: index.handler
-      Code:
-        ZipFile: |
-          def handler(event, context):
-              import os
-              environment = os.environ['ENVIRONMENT']
-              html_response = f"""
-              <!DOCTYPE html>
-              <html>
-              <head>
-                  <title>Welcome - {environment}</title>
-                  <style>
-                      body {{
-                          font-family: Arial, sans-serif;
-                          line-height: 1.6;
-                          max-width: 800px;
-                          margin: 0 auto;
-                      }}
-                      h1, h2 {{
-                          color: #333;
-                          border-bottom: 1px solid #ccc;
-                      }}
-                      p {{
-                          margin-bottom: 16px;
-                      }}
-                  </style>
-              </head>
-              <body>
-                  <h1>Welcome!</h1>
-                  <h2>This is the <bold>{environment}<bold> environment.</h2>
-                  <p>Get ready to learn more about CI/CD and several amazing tools that simplify testing, building, and deploying software.</p>
-                  <p>This welcome page is just the beginning.  Take the next step by deploying the code for the applicaiton.</p>
-              </body>
-              </html>
-              """
-              return {
-                  'statusCode': 200,
-                  'headers': {
-                      'Content-Type': 'text/html',
-                  },
-                  'body': html_response
-              }
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
           ENVIRONMENT: STAGING
-
-  LambdaFunctionProduction:
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: !Sub ${AWS::StackName}-production
-      Runtime: python3.10
-      Handler: index.handler
       Code:
         ZipFile: |
           def handler(event, context):
@@ -134,10 +89,60 @@ Resources:
                   },
                   'body': html_response
               }
+
+
+  LambdaFunctionProduction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: The 'production' environment for the sample application.
+      FunctionName: !Sub ${AWS::StackName}-production
+      Runtime: python3.10
+      Handler: index.handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
           ENVIRONMENT: PRODUCTION
+      Code:
+        ZipFile: |
+          def handler(event, context):
+              import os
+              environment = os.environ['ENVIRONMENT']
+              html_response = f"""
+              <!DOCTYPE html>
+              <html>
+              <head>
+                  <title>Welcome - {environment}</title>
+                  <style>
+                      body {{
+                          font-family: Arial, sans-serif;
+                          line-height: 1.6;
+                          max-width: 800px;
+                          margin: 0 auto;
+                      }}
+                      h1, h2 {{
+                          color: #333;
+                          border-bottom: 1px solid #ccc;
+                      }}
+                      p {{
+                          margin-bottom: 16px;
+                      }}
+                  </style>
+              </head>
+              <body>
+                  <h1>Welcome!</h1>
+                  <h2>This is the <bold>{environment}<bold> environment.</h2>
+                  <p>Get ready to learn more about CI/CD and several amazing tools that simplify testing, building, and deploying software.</p>
+                  <p>This welcome page is just the beginning.  Take the next step by deploying the code for the applicaiton.</p>
+              </body>
+              </html>
+              """
+              return {
+                  'statusCode': 200,
+                  'headers': {
+                      'Content-Type': 'text/html',
+                  },
+                  'body': html_response
+              }
 
   LambdaUrlStaging:
     Type: AWS::Lambda::Url
@@ -173,12 +178,14 @@ Resources:
       GroupName: !Sub ${AWS::StackName}-Group
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+  
   User:
     Type: AWS::IAM::User
     Properties:
       UserName: !Sub ${AWS::StackName}-Service-Account
       Groups:
         - !Ref Group
+  
   Keys:
     Type: AWS::IAM::AccessKey
     Properties:
