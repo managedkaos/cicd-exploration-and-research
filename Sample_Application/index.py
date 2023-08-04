@@ -1,5 +1,8 @@
 def handler(event, context):
+    import os
     import json
+
+    environment = os.environ['ENVIRONMENT']
 
     with open("data.json", "r") as f:
         data = json.load(f)
@@ -13,16 +16,13 @@ def handler(event, context):
             "body": json.dumps(data)
         }
 
-    # Get the id from the path
-    id = event["rawPath"][1:]
-
     if event["rawPath"] == "/docs":
         # Create an HTML page with documentation
         docs_page = """
         <!DOCTYPE html>
         <html>
         <head>
-            <title>API Documentation</title>
+            <title>AAPI Documentation</title>
             <style>
                 body {
                     font-family: Arial, sans-serif;
@@ -40,7 +40,7 @@ def handler(event, context):
             </style>
         </head>
         <body>
-            <h1>API Documentation</h1>
+            <h1>The Amazing API</h1>
             <h2>GET /</h2>
             <p>Returns all data in JSON format.</p>
 
@@ -57,6 +57,9 @@ def handler(event, context):
             },
             "body": docs_page
         }
+
+    # Get the id from the path
+    id = event["rawPath"][1:]
 
     # Check the id against each item in the data
     for item in data:
