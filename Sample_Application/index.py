@@ -2,8 +2,8 @@ def handler(event, context):
     import os
     import json
 
-    environment = os.environ.get('ENVIRONMENT', 'DEFAULT')
-    
+    environment = os.environ.get("ENVIRONMENT", "DEFAULT")
+
     with open("data.json", "r") as f:
         data = json.load(f)
 
@@ -62,7 +62,7 @@ def handler(event, context):
             "headers": {
                 "Content-Type": "text/html",
             },
-            "body": docs_page
+            "body": docs_page,
         }
 
     if event["rawPath"] == "/data":
@@ -71,9 +71,9 @@ def handler(event, context):
             "headers": {
                 "Content-Type": "application/json",
             },
-            "body": json.dumps(data)
+            "body": json.dumps(data),
         }
-    
+
     # Get the id from the path
     id = event["rawPath"][1:]
 
@@ -86,7 +86,7 @@ def handler(event, context):
                 "headers": {
                     "Content-Type": "application/json",
                 },
-                "body": json.dumps(item)
+                "body": json.dumps(item),
             }
 
     # Return a 404 if the id doesn't match any item
@@ -96,9 +96,7 @@ def handler(event, context):
             "headers": {
                 "Content-Type": "application/json",
             },
-            "body": json.dumps({
-                "message": f"id {id} not found",
-                "event": event,
-                "id": id
-            })
+            "body": json.dumps(
+                {"message": f"id {id} not found", "event": event, "id": id}
+            ),
         }

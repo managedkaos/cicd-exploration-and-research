@@ -1,8 +1,11 @@
 PROFILE=pluralsight
 FUNCTION=
+CODE=$(shell ls *.py)
 
 hello:
 	@echo "Here are the targets for this Makefile:"
+	@echo "  lint   - run pylint on the code"
+	@echo "  black  - run black on the code"
 	@echo "  test   - run the tests"
 	@echo "  build  - build the lambda.zip file"
 	@echo "  deploy - deploy the lambda.zip file to AWS"
@@ -17,6 +20,15 @@ hello:
 	@echo
 	@echo "  PROFILE  - the AWS profile to use for the deployment."
 	@echo "  FUNCTION - the name of the existing lambda function to update."
+
+requirements:
+	pip install --requirement requirements-development.txt
+
+lint:
+	pylint --disable=R,C,W1203 $(CODE)
+
+black:
+	black $(CODE)
 
 test:
 	ENVIRONMENT=testing python -m unittest -v index_test
