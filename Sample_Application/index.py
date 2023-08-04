@@ -2,50 +2,57 @@ def handler(event, context):
     import os
     import json
 
-    environment = os.environ['ENVIRONMENT']
-
+    environment = os.environ.get('ENVIRONMENT', 'DEFAULT')
+    
     with open("data.json", "r") as f:
         data = json.load(f)
 
     if event["rawPath"] == "/":
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-            },
-            "body": json.dumps(data)
-        }
-
-    if event["rawPath"] == "/docs":
-        # Create an HTML page with documentation
-        docs_page = """
+        # Return the home page for the application
+        docs_page = f"""
         <!DOCTYPE html>
         <html>
         <head>
-            <title>AAPI Documentation</title>
+            <title>The Sample Application - {environment}</title>
             <style>
-                body {
+                body {{
                     font-family: Arial, sans-serif;
                     line-height: 1.6;
                     max-width: 800px;
                     margin: 0 auto;
-                }
-                h1, h2 {
+                }}
+                h1, h2 {{
                     color: #333;
                     border-bottom: 1px solid #ccc;
-                }
-                p {
+                }}
+                p {{
                     margin-bottom: 16px;
-                }
+                }}
+                button {{
+                    background-color: green;
+                    color: white;
+                    padding: 10px 20px;
+                    font-size: 16px;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                }}
             </style>
         </head>
         <body>
-            <h1>The Amazing API</h1>
-            <h2>GET /</h2>
-            <p>Returns all data in JSON format.</p>
+            <h1>The Sample Application - {environment}</h1>
 
-            <h2>GET /{id}</h2>
+            <h2>GET /</h2>
+            <p>Returns The documentation page for the application.</p>
+            <p><button onclick="window.open('/')">Try it</button></p>
+
+            <h2>GET /data</h2>
+            <p>Returns all data in JSON format.</p>
+            <p><button onclick="window.open('/data')">Try it</button></p>
+
+            <h2>GET /{{id}}</h2>
             <p>Returns a specific item by its ID in JSON format.</p>
+            <p><button onclick="window.open('/1')">Try it</button></p>
         </body>
         </html>
         """
@@ -58,6 +65,15 @@ def handler(event, context):
             "body": docs_page
         }
 
+    if event["rawPath"] == "/data":
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Content-Type": "application/json",
+            },
+            "body": json.dumps(data)
+        }
+    
     # Get the id from the path
     id = event["rawPath"][1:]
 
@@ -86,4 +102,3 @@ def handler(event, context):
                 "id": id
             })
         }
-

@@ -1,55 +1,59 @@
 from index import handler
+from unittest.mock import patch
 import unittest
 import json
 
+
 class TestHandler(unittest.TestCase):
     def setUp(self):
-        # Load the data.json file into a list of dictionaries
-        with open("data.json", "r") as f:
-            self.data = json.load(f)
+        # Set up any test data or configurations you need
+        self.mock_env = "test_environment"
+        patch.dict('os.environ', {'ENVIRONMENT': self.mock_env}).start()
 
-    def test_root_path(self):
-        # Create a valid event for the root path "/"
-        event = {
-            "rawPath": "/"
-        }
+    def tearDown(self):
+        # Clean up after each test if necessary
+        patch.stopall()
 
-        # Call the handler function with the event
+    def test_home_page(self):
+        event = {"rawPath": "/"}
         response = handler(event, None)
-
-        # Validate the response
         self.assertEqual(response["statusCode"], 200)
-        self.assertEqual(response["headers"]["Content-Type"], "text/json")
-        self.assertEqual(json.loads(response["body"]), self.data)
+        self.assertEqual(response["headers"]["Content-Type"], "text/html")
+        self.assertIn(f"The Sample Application - {self.mock_env}", response["body"])
 
-    def test_valid_paths(self):
-        # Test for paths with values from 1 to 12
-        for i in range(1, 13):
-            event = {
-                "rawPath": f"/{i}"
-            }
+    def test_get_all_data(self):
+        with open("data.json", "r") as f:
+            data = json.load(f)
 
-            # Call the handler function with the event
-            response = handler(event, None)
+        event = {"rawPath": "/data"}
+        response = handler(event, None)
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(response["headers"]["Content-Type"], "application/json")
+        self.assertEqual(response["body"], json.dumps(data))
 
-            # Find the corresponding item in the data list
-            item = next((x for x in self.data if x["id"] == str(i)), None)
+    def test_get_item_by_id(self):
+        with open("data.json", "r") as f:
+            data = json.load(f)
 
-            if item:
-                # If the item is found, validate the response
-                self.assertEqual(response["statusCode"], 200)
-                self.assertEqual(response["headers"]["Content-Type"], "text/json")
-                self.assertEqual(json.loads(response["body"]), item)
-            else:
-                # If the item is not found, validate the 404 response
-                self.assertEqual(response["statusCode"], 404)
-                self.assertEqual(response["headers"]["Content-Type"], "text/json")
-                self.assertEqual(json.loads(response["body"]), {
-                    "message": f"id {i} not found",
-                    "event": event,
-                    "id": str(i)
-                })
+        event = {"rawPath": "/1"}
+        response = handler(event, None)
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(response["headers"]["Content-Type"], "application/json")
 
-if __name__ == "__main__":
+        # Find the expected item in data based on the given ID
+        item_id = event["rawPath"][1:]
+        expected_item = next((item for item in data if item["id"] == item_id), None)
+        self.assertEqual(response["body"], json.dumps(expected_item))
+
+    def test_invalid_id(self):
+        with open("data.json", "r") as f:
+            data = json.load(f)
+
+        event = {"rawPath": "/invalid_id"}
+        response = handler(event, None)
+        self.assertEqual(response["statusCode"], 404)
+        self.assertEqual(response["headers"]["Content-Type"], "application/json")
+        self.assertIn(f"id {event['rawPath'][1:]} not found", response["body"])
+
+if __name__ == '__main__':
     unittest.main()
-

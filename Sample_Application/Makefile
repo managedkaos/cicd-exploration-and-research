@@ -1,4 +1,4 @@
-PROFILE=
+PROFILE=pluralsight
 FUNCTION=
 
 hello:
