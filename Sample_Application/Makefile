@@ -25,10 +25,10 @@ requirements:
 	pip install --requirement requirements-development.txt
 
 lint:
-	pylint --disable=R,C,W1203 $(CODE)
+	pylint --disable=R,C $(CODE)
 
 black:
-	black $(CODE)
+	black --check $(CODE)
 
 test:
 	ENVIRONMENT=testing python -m unittest -v index_test
