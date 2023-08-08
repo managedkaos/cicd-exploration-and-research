@@ -4,13 +4,14 @@ CODE=$(shell ls *.py)
 
 hello:
 	@echo "Here are the targets for this Makefile:"
-	@echo "  lint   - run linters on the code"
-	@echo "  black  - run black on the code"
-	@echo "  test   - run the tests"
-	@echo "  build  - build the lambda.zip file"
-	@echo "  deploy - deploy the lambda.zip file to AWS"
-	@echo "  clean  - remove the lambda.zip file"
-	@echo "  all    - clean, test, build, and deploy"
+	@echo "  requirements  - install the project requirements"
+	@echo "  lint          - run linters on the code"
+	@echo "  black         - run black to format the code"
+	@echo "  test          - run the tests"
+	@echo "  build         - build the lambda.zip file"
+	@echo "  deploy        - deploy the lambda.zip file to AWS"
+	@echo "  clean         - remove the lambda.zip file"
+	@echo "  all           - clean, lint, black, test, build, and deploy"
 	@echo
 	@echo
 	@echo "You must set the PROFILE and FUNCTION variables to use the"
@@ -22,7 +23,8 @@ hello:
 	@echo "  FUNCTION - the name of the existing lambda function to update."
 
 requirements:
-	pip install --requirement requirements-development.txt
+	pip install --update pip
+	pip install --requirement requirements.txt
 
 lint:
 	pylint --exit-zero --disable=R,C $(CODE)
