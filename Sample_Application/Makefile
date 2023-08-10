@@ -1,4 +1,4 @@
-PROFILE=pluralsight
+PROFILE=lambda
 FUNCTION=
 CODE=$(shell ls *.py)
 
