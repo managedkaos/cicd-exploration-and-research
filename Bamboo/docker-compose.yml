@@ -1,0 +1,42 @@
+version: '3'
+services:
+  bamboo:
+    image: atlassian/bamboo
+    container_name: bamboo
+    platform: linux/amd64
+    depends_on:
+      - postgres
+    environment:
+      - BAMBOO_JDBC_URL=jdbc:postgresql://postgres:5432/bamboo
+      - BAMBOO_JDBC_USERNAME=bamboo
+      - BAMBOO_JDBC_PASSWORD=bamboo
+    ports:
+      - "8085:8085"
+      - "54663:54663"
+    volumes:
+      - bamboo-data:/var/atlassian/application-data/bamboo
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_DB: bamboo
+      POSTGRES_USER: bamboo
+      POSTGRES_PASSWORD: bamboo
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+        #test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  bamboo-data:
+  postgres-data:
+
