@@ -1,7 +1,7 @@
 Description: EC2 instance with IAM Role CloudFormation Sample Template
 
 Resources:
-  Ec2SsmIamRole:
+  Role:
     Type: AWS::IAM::Role
     Properties: 
       AssumeRolePolicyDocument: 
@@ -14,13 +14,13 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
 
-  Ec2SsmInstanceProfile:
+  Profile:
     Type: AWS::IAM::InstanceProfile
     Properties: 
       Path: /
-      Roles: [!Ref Ec2SsmIamRole]
+      Roles: [!Ref Role]
 
-  MySecurityGroup:
+  SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Allow HTTP traffic
@@ -35,10 +35,9 @@ Resources:
     Properties:
       InstanceType: t2.micro
       ImageId: !Sub "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs}}"
-      IamInstanceProfile: !Ref Ec2SsmInstanceProfile
+      IamInstanceProfile: !Ref Profile
       SecurityGroups:
-        - !Ref MySecurityGroup
+        - !Ref SecurityGroup
       Tags:
         - Key: Name
           Value: !Sub ${AWS::StackName}
-
