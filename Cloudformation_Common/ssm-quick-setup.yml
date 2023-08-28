@@ -237,6 +237,8 @@ Resources:
                 - ssm.amazonaws.com
             Action:
               - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedEC2InstanceDefaultPolicy
       Policies:
         - PolicyDocument:
             Version: 2012-10-17
