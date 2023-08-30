@@ -1,0 +1,54 @@
+#!/bin/bash -xe
+# vi: ft=bash
+exec > >(tee /var/log/user-data.log) 2>&1
+set
+systemctl stop sshd.service
+/bin/chage -d $(date +%Y-%m-%d) cloud-user
+echo '%wheel ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/local-admin-groups
+sed -i '/^Ciphers/d' /etc/ssh/sshd_config
+mount -o remount,defaults,exec,rw /tmp
+systemctl start sshd.service
+yum update -y
+hostnamectl set-hostname ${hostname}
+sed -i -e '$aHOSTNAME=${hostname}' /etc/sysconfig/network
+sed -i -e '$apreserve_hostname: true' /etc/cloud/cloud.cfg
+curl -fsSL https://get.docker.com/ | sh
+systemctl start docker
+systemctl enable docker
+usermod -aG docker cloud-user
+${command}
+
+
+Where command is:
+
+docker run -d \
+    --env HARBOR_ID=5c9e56750b63ac4fe1581a25 \
+    --env SHIP_ID=5e66aa349f6cb452fe7336b7 \
+    --env AUTH_TOKEN=e33ff9e25611e05e336b673dbeffca65017e82770d42181a1534c5d72f2b88cb \
+    -u 0 \
+    --name=bzm-crane-5e66aa349f6cb452fe7336b7 \
+    --restart=on-failure \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -w /usr/src/app/ \
+    --net=host \
+    blazemeter/crane python agent/agent.py
+
+
+First, enable the NGINX repository provided by Amazon:
+
+amazon-linux-extras enable nginx1
+
+This enabled a sub-repository with NGINX.
+
+Now, list available versions by running:
+
+yum info nginx --showduplicates
+
+From there, you can decipher that 1.14.2 is not available specifically for Amazon Linux. But that does not mean that you should install random other direct RPM via URL.
+
+Use the closest nearest NGINX version to your requirements, e.g.
+
+yum install nginx-1.16.1
+
+This will install the latest NGINX version available for Amazon Linux.
+

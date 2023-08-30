@@ -1,0 +1,198 @@
+Description: EC2 instance with SSM, Docker, Java, and MariaDB
+
+Resources:
+  Role:
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ec2.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+
+  Profile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Path: /
+      Roles: [!Ref Role]
+
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Allow TCP traffic on ports 80, 8080, 8085, 54663
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 8085
+          ToPort: 8085
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 8111
+          ToPort: 8111
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 9090
+          ToPort: 9090
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 54663
+          ToPort: 54663
+
+  Server:
+    Type: AWS::EC2::Instance
+
+    Metadata:
+      'AWS::CloudFormation::Init':
+        configSets:
+          application_installation:
+            - install_cfn
+            - install_apps
+            - configure_database
+        install_cfn:
+          files:
+            /etc/cfn/cfn-hup.conf:
+              content: !Join 
+                - ''
+                - - |
+                    [main]
+                  - stack=
+                  - !Ref 'AWS::StackId'
+                  - |+
+
+                  - region=
+                  - !Ref 'AWS::Region'
+                  - |+
+
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Join 
+                - ''
+                - - |
+                    [cfn-auto-reloader-hook]
+                  - |
+                    triggers=post.update
+                  - |
+                    path=Resources.Server.Metadata.AWS::CloudFormation::Init
+                  - 'action=/opt/aws/bin/cfn-init -v '
+                  - '         --stack '
+                  - !Ref 'AWS::StackName'
+                  - '         --resource Server '
+                  - '         --configsets application_installation '
+                  - '         --region '
+                  - !Ref 'AWS::Region'
+                  - |+
+
+              mode: '000400'
+              owner: root
+              group: root
+          services:
+            sysvinit:
+              cfn-hup:
+                enabled: 'true'
+                ensureRunning: 'true'
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+        install_apps:
+          packages:
+            yum:
+              docker: []
+              mariadb-server: []
+              java-17-amazon-corretto: []
+          files:
+            /tmp/setup.mysql:
+              content: !Join 
+                - ''
+                - - CREATE DATABASE application;
+                  - CREATE USER application@localhost IDENTIFIED BY 'application';
+                  - GRANT ALL ON application.* TO application@localhost;
+                  - FLUSH PRIVILEGES;
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/index.html:
+              content: !Sub |
+                <html>
+                  <head>
+                    <title>Welcome to ${AWS::StackName}</title>
+                  </head>
+                  <body>
+                    <h1>Welcome to ${AWS::StackName}!</h1>
+                    <p>This is a sample CloudFormation stack.</p>
+                    <p>Check out these links:</p>
+                    <ul>
+                      <li><a href="/chat">Chat with ChatGPT</a></li>
+                      <li><a href="/other-page">Another Page</a></li>
+                    </ul>
+                  </body>
+                </html>
+              mode: "000444"
+              owner: root
+              group: root
+          services:
+            sysvinit:
+              mariadb:
+                enabled: 'true'
+                ensureRunning: 'true'
+              docker:
+                enabled: 'true'
+                ensureRunning: 'true'
+
+        configure_database:
+          commands:
+            01_set_mysql_root_password:
+              command: mysqladmin -u root password 'root'
+              test: $(mysql 'application' -u root --password='root' >/dev/null 2>&1 </dev/null); (( $? != 0 ))
+            02_create_database:
+              command: mysql -u root --password='root' < /tmp/setup.mysql
+              test: $(mysql 'application' -u root --password='root' >/dev/null 2>&1 </dev/null); (( $? != 0 ))
+
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Sub "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs}}"
+      IamInstanceProfile: !Ref Profile
+      SecurityGroups:
+        - !Ref SecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}
+
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash -xe
+            exec > >(tee /var/log/user-data.log) 2>&1
+            set
+            yum update -y aws-cfn-bootstrap
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --region ${AWS::Region} --resource Server --configsets application_installation
+            docker run --detach --publish 80:80 --volume /etc/index.html:/usr/share/nginx/html/index.html:ro nginx
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --region ${AWS::Region} --resource Server
+ 
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+
+Outputs:
+  URL:
+    Value: !Join 
+      - ''
+      - - 'http://'
+        - !GetAtt 
+          - Server
+          - PublicDnsName
+        - /
+    Description: Application URL

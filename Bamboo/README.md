@@ -6,7 +6,7 @@
 - https://www.atlassian.com/software/bamboo/downloads/binary/atlassian-bamboo-9.2.4.tar.gz
 - https://hub.docker.com/r/atlassian/bamboo-server
 - https://my.atlassian.com/products/index?sen=19607160&evalId=19607160&eval=true#license_19607160
-
+- [Stuff you will wonder about when installing Bamboo](https://blog.cone.be/2015/06/11/stuff-you-will-wonder-about-when-installing-bamboo/)
 
 - /etc/systemd/system/bamboo.service
 ```
