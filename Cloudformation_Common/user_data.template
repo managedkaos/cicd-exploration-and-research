@@ -52,3 +52,6 @@ yum install nginx-1.16.1
 
 This will install the latest NGINX version available for Amazon Linux.
 
+
+If you run Jenkins inside Docker as a detached container, you can use docker logs <containerId> to view the Jenkins logs.
+
