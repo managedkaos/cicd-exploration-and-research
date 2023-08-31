@@ -59,7 +59,6 @@ Resources:
           application_installation:
             - install_cfn
             - install_apps
-            - configure_database
         install_cfn:
           files:
             /etc/cfn/cfn-hup.conf:
@@ -111,55 +110,70 @@ Resources:
           packages:
             yum:
               docker: []
-              mariadb-server: []
-              java-17-amazon-corretto: []
           files:
-            /tmp/setup.mysql:
-              content: !Join 
-                - ''
-                - - CREATE DATABASE application;
-                  - CREATE USER application@localhost IDENTIFIED BY 'application';
-                  - GRANT ALL ON application.* TO application@localhost;
-                  - FLUSH PRIVILEGES;
-              mode: '000400'
-              owner: root
-              group: root
             /etc/index.html:
               content: !Sub |
+                <!DOCTYPE html>
                 <html>
-                  <head>
-                    <title>${AWS::StackName} Stack</title>
-                  </head>
-                  <body>
-                    <h1>Welcome to the ${AWS::StackName} Stack!</h1>
-                    <p>This CloudFormation stack uses a Docker image to start a a base configuration for Bamboo.</p>
-                    <p><b>Please note that this installation is intended for reaseach purposes only and should not be used in production environment.</b></p>
-                    <p>Follow the link below to complete the installation.</p>
-                  </body>
+                <head>
+                  <title>Welcome to ${AWS::StackName}</title>
+                  <style>
+                    body {
+                      font-family: Arial, sans-serif;
+                      background-color: #f5f5f5;
+                      margin: 0;
+                      padding: 0;
+                      display: flex;
+                      flex-direction: column;
+                      align-items: center;
+                      justify-content: center;
+                      height: 100vh;
+                    }
+                    h1 {
+                      color: #007bff;
+                      font-size: 36px;
+                      margin-bottom: 20px;
+                    }
+                    p {
+                      color: #333;
+                      font-size: 18px;
+                      line-height: 1.5;
+                      max-width: 600px;
+                      text-align: center;
+                      margin-bottom: 20px;
+                    }
+                    a {
+                      color: #007bff;
+                      text-decoration: none;
+                    }
+                    a:hover {
+                      text-decoration: underline;
+                    }
+                    b {
+                      font-weight: bold;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <h1>Welcome to ${AWS::StackName}!</h1>
+                  <p>This server is running an evaluation environment for <a href="https://www.atlassian.com/software/bamboo" target="_blank">Atlassian Bamboo</a></p>
+                  <p><b>The configuration in use is meant for education and research purposes only and is not intended for production use.</b></p>
+                  <p>Open an HTTP link to this host on port <b>8085</b> to complete the installation.</p>
+                  <p>http://hostname:8085</p>
+                  <h2>Have fun evaluating Bamboo!</h2>
+                </body>
                 </html>
               mode: "000444"
               owner: root
               group: root
           services:
             sysvinit:
-              mariadb:
-                enabled: 'true'
-                ensureRunning: 'true'
               docker:
                 enabled: 'true'
                 ensureRunning: 'true'
 
-        configure_database:
-          commands:
-            01_set_mysql_root_password:
-              command: mysqladmin -u root password 'root'
-              test: $(mysql 'application' -u root --password='root' >/dev/null 2>&1 </dev/null); (( $? != 0 ))
-            02_create_database:
-              command: mysql -u root --password='root' < /tmp/setup.mysql
-              test: $(mysql 'application' -u root --password='root' >/dev/null 2>&1 </dev/null); (( $? != 0 ))
-
     Properties:
-      InstanceType: t2.small
+      InstanceType: t3.large
       ImageId: !Sub "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs}}"
       IamInstanceProfile: !Ref Profile
       SecurityGroups:
@@ -193,5 +207,5 @@ Outputs:
         - !GetAtt 
           - Server
           - PublicDnsName
-        - /
+        - :8085/
     Description: Application URL
