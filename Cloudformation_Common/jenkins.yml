@@ -195,8 +195,8 @@ Resources:
             yum update -y aws-cfn-bootstrap
             /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --region ${AWS::Region} --resource Server --configsets application_installation
             docker run --detach --publish 80:80 --volume /etc/index.html:/usr/share/nginx/html/index.html:ro nginx
-            docker volume create --name bamboo_home
-            docker run --volume bamboo_home:/var/atlassian/application-data/bamboo --name bamboo --detach --publish 8085:8085 --publish 54663:54663 atlassian/bamboo
+            docker volume create jenkins_home
+            docker run --detach --publish 8080:8080 --publish 50000:50000 --volume jenkins_home:/var/jenkins_home  --name jenkins jenkins/jenkins:lts
             /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --region ${AWS::Region} --resource Server
  
 Outputs:

@@ -29,27 +29,7 @@ Resources:
           IpProtocol: tcp
           FromPort: 80
           ToPort: 80
-        - CidrIp: 0.0.0.0/0
-          IpProtocol: tcp
-          FromPort: 8080
-          ToPort: 8080
-        - CidrIp: 0.0.0.0/0
-          IpProtocol: tcp
-          FromPort: 8085
-          ToPort: 8085
-        - CidrIp: 0.0.0.0/0
-          IpProtocol: tcp
-          FromPort: 8111
-          ToPort: 8111
-        - CidrIp: 0.0.0.0/0
-          IpProtocol: tcp
-          FromPort: 9090
-          ToPort: 9090
-        - CidrIp: 0.0.0.0/0
-          IpProtocol: tcp
-          FromPort: 54663
-          ToPort: 54663
-
+        
   Server:
     Type: AWS::EC2::Instance
 
@@ -114,62 +94,6 @@ Resources:
           packages:
             yum:
               docker: []
-          files:
-            /etc/index.html:
-              content: !Sub |
-                <!DOCTYPE html>
-                <html>
-                <head>
-                  <title>Welcome to ${AWS::StackName}</title>
-                  <style>
-                    body {
-                      font-family: Arial, sans-serif;
-                      background-color: #f5f5f5;
-                      margin: 0;
-                      padding: 0;
-                      display: flex;
-                      flex-direction: column;
-                      align-items: center;
-                      justify-content: center;
-                      height: 100vh;
-                    }
-                    h1 {
-                      color: #007bff;
-                      font-size: 36px;
-                      margin-bottom: 20px;
-                    }
-                    p {
-                      color: #333;
-                      font-size: 18px;
-                      line-height: 1.5;
-                      max-width: 600px;
-                      text-align: center;
-                      margin-bottom: 20px;
-                    }
-                    a {
-                      color: #007bff;
-                      text-decoration: none;
-                    }
-                    a:hover {
-                      text-decoration: underline;
-                    }
-                    b {
-                      font-weight: bold;
-                    }
-                  </style>
-                </head>
-                <body>
-                  <h1>Welcome to ${AWS::StackName}!</h1>
-                  <p>This server is running an evaluation environment for <a href="https://www.atlassian.com/software/bamboo" target="_blank">Atlassian Bamboo</a></p>
-                  <p><b>The configuration in use is meant for education and research purposes only and is not intended for production use.</b></p>
-                  <p>Get started by opening a link to this host on port <b>8085</b>.  Then proceed by completing the installation.</p>
-                  <p>http://hostname:8085</p>
-                  <h2>Have fun evaluating Bamboo!</h2>
-                </body>
-                </html>
-              mode: "000444"
-              owner: root
-              group: root
           services:
             sysvinit:
               docker:
@@ -194,9 +118,14 @@ Resources:
             set
             yum update -y aws-cfn-bootstrap
             /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --region ${AWS::Region} --resource Server --configsets application_installation
-            docker run --detach --publish 80:80 --volume /etc/index.html:/usr/share/nginx/html/index.html:ro nginx
-            docker volume create --name bamboo_home
-            docker run --volume bamboo_home:/var/atlassian/application-data/bamboo --name bamboo --detach --publish 8085:8085 --publish 54663:54663 atlassian/bamboo
+            docker volume create --name teamcity_data
+            docker volume create --name teamcity_logs
+            docker run --detach \
+                --name teamcity-server \
+                --volume teamcity_data:/data/teamcity_server/datadir \
+                --volume teamcity_logs:/opt/teamcity/logs \
+                --publish 80:8111 \
+                jetbrains/teamcity-server
             /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --region ${AWS::Region} --resource Server
  
 Outputs:
@@ -207,5 +136,5 @@ Outputs:
         - !GetAtt 
           - Server
           - PublicDnsName
-        - :8085/
+        - /
     Description: Application URL
