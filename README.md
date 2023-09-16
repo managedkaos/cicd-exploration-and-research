@@ -98,3 +98,65 @@
 - 2023-07-14
   - Maybe use App Runner instead of Elastic Beanstalk or Lambda?
   - [AWS App Runner CloudFormation Template generated using AWS Copilot](https://gist.github.com/toricls/5c448b723e25118e683ae065ce58fa1d)
+
+
+
+## Experimental Pipeline
+
+Secrets:
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+
+Variables:
+- AWS_DEFAULT_REGION
+- STAGING_FUNCTION_NAME
+- STAGING_URL
+- PRODUCTION_FUNCTION_NAME
+- PRODUCTION_URL
+
+1. Requirements
+
+    python3 -m venv local
+    . ./local/bin/activate
+    make requirements
+
+2. Check-Lint-Test
+
+    . ./local/bin/activate
+    make check lint test
+
+3. Build
+
+    make build
+
+4. Deploy Staging
+
+    make deploy \
+        ENVIRONMENT="Staging" \
+        PLATFORM="TeamCity" \
+        FUNCTION=${STAGING_FUNCTION_NAME} \
+        VERSION=${BUILD_VCS_NUMBER} \
+        BUILD_NUMBER=${BUILD_NUMBER}
+
+5. Test Staging
+
+    make testdeployment URL=${STAGING_URL}
+
+6. Deploy Production
+
+    make deploy \
+        ENVIRONMENT="Production" \
+        PLATFORM="TeamCity" \
+        FUNCTION=${PRODUCTION_FUNCTION_NAME} \
+        VERSION=${BUILD_VCS_NUMBER} \
+        BUILD_NUMBER=${BUILD_NUMBER}
+
+7. Test Production
+
+    make testdeployment URL=${PRODUCTION_URL}
+
+Bamboo Make Argument:
+deploy ENVIRONMENT="Staging" PLATFORM="Bamboo" FUNCTION=${bamboo.STAGING_FUNCTION_NAME} VERSION=${bamboo.planRepository.revision} BUILD_NUMBER=${bamboo.buildNumber}
+
+Bamboo Evnrionment Variables:
+AWS_ACCESS_KEY_ID=${bamboo.AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${bamboo.AWS_SECRET_ACCESS_KEY} AWS_DEFAULT_REGION=${bamboo.AWS_DEFAULT_REGION}
