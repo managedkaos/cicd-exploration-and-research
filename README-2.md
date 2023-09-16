@@ -127,7 +127,7 @@ Variables:
 
 3. Build
 
-    make build
+    make clean build
 
 4. Deploy Staging
 
