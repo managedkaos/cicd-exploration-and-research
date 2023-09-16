@@ -127,7 +127,7 @@ Variables:
 
 3. Build
 
-    make build
+    make clean build
 
 4. Deploy Staging
 
@@ -160,3 +160,41 @@ deploy ENVIRONMENT="Staging" PLATFORM="Bamboo" FUNCTION=${bamboo.STAGING_FUNCTIO
 
 Bamboo Evnrionment Variables:
 AWS_ACCESS_KEY_ID=${bamboo.AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${bamboo.AWS_SECRET_ACCESS_KEY} AWS_DEFAULT_REGION=${bamboo.AWS_DEFAULT_REGION}
+
+
+
+
+## Updating CFN for Sample Application to limit lambda permissions
+```
+LambdaFunctionPolicy:
+  Type: AWS::IAM::ManagedPolicy
+  Properties:
+    PolicyName: !Sub ${AWS::StackName}-LambdaFunctionPolicy
+    PolicyDocument:
+      Version: '2012-10-17'
+      Statement:
+        - Effect: Allow
+          Action:
+            - lambda:InvokeFunction
+            - lambda:UpdateFunctionCode
+            - lambda:UpdateFunctionConfiguration
+          Resource:
+            - !GetAtt YourLambdaFunctionArn1
+            - !GetAtt YourLambdaFunctionArn2
+            # Add more Lambda function ARNs as needed
+
+User:
+  Type: AWS::IAM::User
+  Properties:
+    UserName: YourUserName
+    Groups:
+      - !Ref UserGroup
+
+UserGroup:
+  Type: AWS::IAM::Group
+  Properties:
+    GroupName: !Sub ${AWS::StackName}-Group
+    ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+      - !Ref LambdaFunctionPolicy  # Attach the custom policy here
+```
