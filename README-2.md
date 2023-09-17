@@ -131,12 +131,7 @@ Variables:
 
 4. Deploy Staging
 
-    make deploy \
-        ENVIRONMENT="Staging" \
-        PLATFORM="TeamCity" \
-        FUNCTION=${STAGING_FUNCTION_NAME} \
-        VERSION=${BUILD_VCS_NUMBER} \
-        BUILD_NUMBER=${BUILD_NUMBER}
+	make deploy FUNCTION=${STAGING_FUNCTION_NAME} PLATFORM="CircleCI" VERSION=${BUILD_VCS_NUMBER} BUILD_NUMBER=${BUILD_NUMBER}
 
 5. Test Staging
 
@@ -144,12 +139,7 @@ Variables:
 
 6. Deploy Production
 
-    make deploy \
-        ENVIRONMENT="Production" \
-        PLATFORM="TeamCity" \
-        FUNCTION=${PRODUCTION_FUNCTION_NAME} \
-        VERSION=${BUILD_VCS_NUMBER} \
-        BUILD_NUMBER=${BUILD_NUMBER}
+	make deploy FUNCTION=${PRODUCTION_FUNCTION_NAME} PLATFORM="CircleCI" VERSION=${BUILD_VCS_NUMBER} BUILD_NUMBER=${BUILD_NUMBER}
 
 7. Test Production
 

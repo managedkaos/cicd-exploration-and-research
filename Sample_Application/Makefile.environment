@@ -1,0 +1,15 @@
+FUNCTION = ""
+ifneq (,$(findstring -staging,$(FUNCTION)))
+	ENVIRONMENT = STAGING
+else ifneq (,$(findstring -production,$(FUNCTION)))
+	ENVIRONMENT = PRODUCTION
+else
+	ENVIRONMENT = UNDEFINED
+endif
+
+all:
+	echo "Environment: $(ENVIRONMENT)"
+
+
+.PHONY: all
+
