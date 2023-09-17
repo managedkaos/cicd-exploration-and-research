@@ -1,17 +1,21 @@
 AWSTemplateFormatVersion: "2010-09-09"
 
-Description: |
-  A CloudFormation template that creates the following resources:
+Description: >
+  This CloudFormation template creates the following resources for a sample application:
     1) Lambda function for the staging environment.
     2) Lambda function for the production environment.
     3) IAM group with the managed policy AWSLambda_FullAccess attached.
     4) IAM user as a member of the group to be used as a service account.
     5) IAM access key for the service account
-  Outputs:
+  
+  The following outputs are created for your reference:
     1) Region where the stack is deployed.
     2) Account ID where the stack is deployed.
     3) URLs for the staging and production environments.
     4) AccessKeyId and SecretAccessKey for the service account.
+
+  Be sure to protect the credentials that are created and 
+  delete this stack when you are finished with the course.
 
 Resources:
   LambdaExecutionRole:
@@ -172,47 +176,64 @@ Resources:
       Action: "lambda:InvokeFunctionUrl"
       FunctionUrlAuthType: NONE
 
-  Group:
-    Type: AWS::IAM::Group
-    Properties:
-      GroupName: !Sub ${AWS::StackName}-Group
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSLambda_FullAccess
-  
-  User:
+  ServiceAccount:
     Type: AWS::IAM::User
     Properties:
       UserName: !Sub ${AWS::StackName}-Service-Account
-      Groups:
-        - !Ref Group
-  
+
+  ServiceAccountIamUserPolicy:
+    Type: AWS::IAM::UserPolicy
+    Properties:
+      PolicyName: !Sub ${AWS::StackName}-ServiceAccountIamUserPolicy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+              - lambda:UpdateFunctionCode
+              - lambda:GetFunctionConfiguration
+              - lambda:UpdateFunctionConfiguration
+            Resource:
+              - !GetAtt LambdaFunctionProduction.Arn
+              - !GetAtt LambdaFunctionStaging.Arn
+      UserName: !Ref ServiceAccount
+
   Keys:
     Type: AWS::IAM::AccessKey
     Properties:
-      UserName: !Ref User
+      UserName: !Ref ServiceAccount
 
 Outputs:
-  UrlStaging:
+  StagingFunctionName:
+    Description: The name of the Lambda function for the staging environment
+    Value: !Sub ${AWS::StackName}-staging
+
+  StagingURL:
     Description: The URL for the staging environment
     Value:
       Fn::GetAtt: LambdaUrlStaging.FunctionUrl
-  
-  UrlProduction:
+
+  ProductionFunctionName:
+    Description: The name of the Lambda function for the production environment
+    Value: !Sub ${AWS::StackName}-production
+
+  ProductionURL:
     Description: The URL for the production environment
     Value:
       Fn::GetAtt: LambdaUrlProduction.FunctionUrl
   
-  ServiceAccountAccessKeyId:
-    Description: The AccessKeyId for the service account. Please keep this value secure.
+  AwsAccessKeyId:
+    Description: The AWS_ACCESS_KEY_ID for the service account. Please keep this value secure.
     Value: 
       !Ref Keys
   
-  ServiceAccountAccessKey:
-    Description: The SecretAccessKey for the service account. Please keep this value secure.
+  AwsSecretAccessKey:
+    Description: The AWS_SECRET_ACCESS_KEY for the service account. Please keep this value secure.
     Value: 
       !GetAtt Keys.SecretAccessKey
   
-  DeploymentRegion:
-    Description: The region where the stack is deployed.
+  AwsDefaultRegion:
+    Description: The AWS_DEFAULT_REGION where the stack is deployed.
     Value: 
       !Sub ${AWS::Region}
