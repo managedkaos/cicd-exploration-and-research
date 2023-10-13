@@ -1,0 +1,240 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+# TODO: Add parameters for the ALB subnets
+# Parameters:
+
+Description: >
+  Working with ALBs and Lambda functions
+
+Resources:
+  # Security group for ALB to allow incoming traffic from all IP addresses
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-alb-sg
+      GroupDescription: Security Group for ALB
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+
+  ProductionTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${AWS::StackName}-prod-tg
+      TargetType: lambda
+      Targets:
+        - Id: !GetAtt LambdaFunctionProduction.Arn
+
+  MaintenanceTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${AWS::StackName}-maint-tg
+      TargetType: lambda
+      Targets:
+        - Id: !GetAtt LambdaFunctionMaintenance.Arn
+
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${AWS::StackName}-alb
+      Scheme: internet-facing
+      Type: application
+      SecurityGroups:
+        - !GetAtt AlbSecurityGroup.GroupId
+      Subnets:
+        - subnet-0891a7137310282f6
+        - subnet-0aa638af98a2451a3
+
+  LoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ProductionTargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  LambdaPermissionForProduction:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt LambdaFunctionProduction.Arn
+      Principal: elasticloadbalancing.amazonaws.com
+
+  LambdaPermissionForMaintenance:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt LambdaFunctionMaintenance.Arn
+      Principal: elasticloadbalancing.amazonaws.com
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-LambdaExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+  LambdaFunctionMaintenance:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: The 'maintenance' environment for the sample application.
+      FunctionName: !Sub ${AWS::StackName}-maintenance
+      Runtime: python3.10
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          ENVIRONMENT: MAINTENANCE
+      Code:
+        ZipFile: |
+          def handler(event, context):
+              import os
+              environment = os.environ['ENVIRONMENT']
+              html_response = f"""
+              <!DOCTYPE html>
+              <html>
+              <head>
+                  <title>{environment}</title>
+                  <style>
+                      body {{
+                          font-family: Arial, sans-serif;
+                          line-height: 1.6;
+                          max-width: 800px;
+                          margin: 0 auto;
+                      }}
+                      h1, h2 {{
+                          color: #333;
+                          border-bottom: 1px solid #ccc;
+                      }}
+                      p {{
+                          margin-bottom: 16px;
+                      }}
+                  </style>
+              </head>
+              <body>
+                  <h1>This is the <bold>{environment}<bold> environment.</h1>
+              </body>
+              </html>
+              """
+              return {
+                  'statusCode': 200,
+                  'headers': {
+                      'Content-Type': 'text/html',
+                  },
+                  'body': html_response
+              }
+
+
+  LambdaFunctionProduction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: The 'production' environment for the sample application.
+      FunctionName: !Sub ${AWS::StackName}-production
+      Runtime: python3.10
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          ENVIRONMENT: PRODUCTION
+      Code:
+        ZipFile: |
+          def handler(event, context):
+              import os
+              environment = os.environ['ENVIRONMENT']
+              html_response = f"""
+              <!DOCTYPE html>
+              <html>
+              <head>
+                  <title>{environment}</title>
+                  <style>
+                      body {{
+                          font-family: Arial, sans-serif;
+                          line-height: 1.6;
+                          max-width: 800px;
+                          margin: 0 auto;
+                      }}
+                      h1, h2 {{
+                          color: #333;
+                          border-bottom: 1px solid #ccc;
+                      }}
+                      p {{
+                          margin-bottom: 16px;
+                      }}
+                  </style>
+              </head>
+              <body>
+                  <h1>This is the <bold>{environment}<bold> environment.</h1>
+              </body>
+              </html>
+              """
+              return {
+                  'statusCode': 200,
+                  'headers': {
+                      'Content-Type': 'text/html',
+                  },
+                  'body': html_response
+              }
+
+  LambdaUrlMaintenance:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !Ref LambdaFunctionMaintenance
+      AuthType: NONE
+
+  LambdaUrlPermissionMaintenance:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaFunctionMaintenance
+      Principal: "*"
+      Action: "lambda:InvokeFunctionUrl"
+      FunctionUrlAuthType: NONE
+
+  LambdaUrlProduction:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !Ref LambdaFunctionProduction
+      AuthType: NONE
+
+  LambdaUrlPermissionProdction:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaFunctionProduction
+      Principal: "*"
+      Action: "lambda:InvokeFunctionUrl"
+      FunctionUrlAuthType: NONE
+
+Outputs:
+  MaintenanceURL:
+    Description: The URL for the maintenance environment
+    Value:
+      Fn::GetAtt: LambdaUrlMaintenance.FunctionUrl
+
+  ProductionURL:
+    Description: The URL for the production environment
+    Value:
+      Fn::GetAtt: LambdaUrlProduction.FunctionUrl
+
+  ApplicationLoadBalancerDNSName:
+    Description: The DNS name of the Application Load Balancer
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+
